@@ -1,6 +1,6 @@
 import pandas as pd
 import tushare as ts
-ts.set_token("867c099a7df5193a7bc3b3d9f6311307a3d1885fbb39888f44754c86")
+ts.set_token("Your token here.")
 pro=ts.pro_api()
 import numpy as np
 df=pro.index_dailybasic(ts_code="000300.SH",start_date="20130101",end_date="20210101"
