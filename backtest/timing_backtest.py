@@ -50,6 +50,8 @@ class timing_backtest():
                 today_account = [today_info["trade_date"], cash, weight, value]
                 account.loc[len(account.index)] = today_account
                 print("{}卖出执行，卖出价{}".format(today_info["trade_date"], today_info["close"]))
+            else:
+                account.loc[len(account.index)]=account.loc[-1]
 
         #打印基础信息 这里方法将交易信息都存储到了account属性中 后面具体详细分析 可以加在analysis方法里面
         print("---------"*5,"result","---------"*5)
