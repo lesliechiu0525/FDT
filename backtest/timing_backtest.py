@@ -27,8 +27,10 @@ class timing_backtest():
         account=self.account
         df=self.data[["trade_date","ts_code","close",strategy.factor_name]]
         #价格etf标准化
+        df=df.copy()
         df["close"]=df["close"]/df.loc[0,"close"]
         #加载信号
+        df=df.copy()
         df["signal"]=df[strategy.factor_name].apply(strategy.signal)
         #开始交易  每日的交易信息添加到account表上 这里其实可以设置回测日期 不过并不影响 这里默认是交易input表上所有日期
         for i in range(len(df.index)):
@@ -51,13 +53,13 @@ class timing_backtest():
                 account.loc[len(account.index)] = today_account
                 print("{}卖出执行，卖出价{}".format(today_info["trade_date"], today_info["close"]))
             else:
-                account.loc[len(account.index)]=account.loc[-1]
+                account.loc[len(account.index)]=account.iloc[-1]
 
         #打印基础信息 这里方法将交易信息都存储到了account属性中 后面具体详细分析 可以加在analysis方法里面
         print("---------"*5,"result","---------"*5)
         print("start_value:",account.loc[0,"value"])
-        print("end_value:",account.loc[-1,"value"])
-        print("totle_return",account.loc[-1,"value"]/account.loc[0,"value"])
+        print("end_value:",account.loc[max(account.index),"value"])
+        print("totle_return",account.loc[max(account.index),"value"]/account.loc[0,"value"])
         self.account=account
     def analysis(self):
         #这里根据run方法得到的交易记录表进行详细分析 输出年化收益 夏普比率 最大回测 超额收益 交易单 画净值图
