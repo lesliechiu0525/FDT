@@ -7,9 +7,12 @@ class strategy():
         self.limit=None
         self.position=None
         self.factor_name=None
-    def single_factor(self,factor_name,long,short,close=None):#long 和 short的数值必须添加 close后面开发
+    def single_factor(self,factor_name,long,short,close=None,method="M"):#long 和 short的数值必须添加 close后面开发
         self.factor_name=factor_name
-        self.signal=lambda x:1 if x>long else(-1 if x<short else 0)
+        if method=="M":#指标动量
+            self.signal=lambda x:1 if x>long else(-1 if x<short else 0)
+        if method=="I":#指标反转
+            self.signal=lambda x:-1 if x>long else(1 if x<short else 0)
         #可以建模做连续预测 来和仓位挂钩 后面开发
 class timing_backtest():
     def __init__(self):
