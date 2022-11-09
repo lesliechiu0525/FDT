@@ -36,24 +36,24 @@ class timing_backtest():
         for i in range(len(df.index)):
             today_info=df.loc[i]
             pre_account=account.loc[i]
+            cash=pre_account["cash"]
+            weight=pre_account["weight"]
+            value=pre_account["value"]
             #信号为1 现金足够的情况下买入
-            if pre_account["cash"]>today_info["close"] and today_info["signal"]==1:
+            if pre_account["weight"]==0 and today_info["signal"]==1:
                 cash=pre_account["cash"]%today_info["close"]
                 weight=pre_account["cash"]//today_info["close"]
                 value=weight*today_info["close"]+cash
-                today_account=[today_info["trade_date"],cash,weight,value]
-                account.loc[len(account.index)]=today_account
                 print("{}买入执行，买入价{}".format(today_info["trade_date"],today_info["close"]))
             #信号为2 有持仓的情况下卖出
             elif pre_account["weight"]!=0 and today_info["signal"]==-1:
                 cash=pre_account["weight"]*today_info["close"]+pre_account["cash"]
                 weight=0
                 value=cash
-                today_account = [today_info["trade_date"], cash, weight, value]
-                account.loc[len(account.index)] = today_account
                 print("{}卖出执行，卖出价{}".format(today_info["trade_date"], today_info["close"]))
-            else:
-                account.loc[len(account.index)]=account.iloc[-1]
+            #将每日情况记录
+            today_account = [today_info["trade_date"], cash, weight, value]
+            account.loc[len(account.index)]=today_account
 
         #打印基础信息 这里方法将交易信息都存储到了account属性中 后面具体详细分析 可以加在analysis方法里面
         print("---------"*5,"result","---------"*5)
