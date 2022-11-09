@@ -1,5 +1,7 @@
 #固定标的资产择时 回测程序
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 class strategy():
     def __init__(self):
         self.signal=None
@@ -48,7 +50,7 @@ class timing_backtest():
                 weight=pre_account["cash"]//today_info["close"]
                 value=weight*today_info["close"]+cash
                 print("{}买入执行，买入价{}".format(today_info["trade_date"],today_info["close"]))
-            #信号为2 有持仓的情况下卖出
+            #信号为-1 有持仓的情况下卖出
             elif pre_account["weight"]!=0 and today_info["signal"]==-1:
                 cash=pre_account["weight"]*today_info["close"]+pre_account["cash"]
                 weight=0
@@ -66,5 +68,42 @@ class timing_backtest():
         self.account=account
     def analysis(self):
         #这里根据run方法得到的交易记录表进行详细分析 输出年化收益 夏普比率 最大回测 超额收益 交易单 画净值图
-        #留给后来者开发
-        pass
+        #我只写了年化和夏普 还有回撤和交易单胜率这些可以添加 交易频率等等
+        result_data=self.account.iloc[1:,:]
+        result_data.reset_index(drop=True, inplace=True)
+        result_data=result_data.copy()
+        result_data["trade_date"]=pd.to_datetime(result_data["trade_date"])
+        result_data["return"]=result_data["value"]/result_data.loc[0,"value"]
+        result_data.index=pd.to_datetime(result_data["trade_date"])
+        #取年化收益
+        df_annual0=result_data["return"].resample("Y").ohlc()["close"]
+        df_annual=df_annual0/df_annual0.shift(1)
+        df_annual.fillna(df_annual0.iloc[0],inplace=True)
+        print("-------年化收益-------")
+        for i in range(len(df_annual.index)):
+            print(df_annual.index[i].strftime("%Y"),df_annual[i])
+        print("-----夏普比率-----")
+        print("夏普比率为{}".format((df_annual.values.mean()-1)/df_annual.values.std()))
+        #暂时之开发画净值图
+        df_result=self.account
+        data=self.data
+        fig=plt.figure(figsize=(18,12))
+        plt.plot(pd.to_datetime(df_result["trade_date"][1:]),df_result["value"][1:]/df_result.loc[0,"value"],label="strategy_value")
+        plt.plot(pd.to_datetime(data["trade_date"]),data["close"]/data.loc[0,"close"],label="000300SH_value")
+        plt.title("strategy_performance")
+        plt.legend(fancybox=True,shadow=True)
+        columns=["000300SH","strategy","excess"]
+        rows=["final_return"]
+        market_return=data.loc[max(data.index),"close"]/data.loc[0,"close"]
+        strategy_return=df_result.loc[max(df_result.index),"value"]/df_result.loc[0,"value"]
+        excessive_return=strategy_return-market_return
+        values=[[market_return,strategy_return,excessive_return]]
+        plt.table(cellText=values
+                  ,cellLoc="center"
+                  ,colLabels=columns
+                  ,rowLabels=rows
+                  ,colWidths=[0.1]*3
+                  ,rowLoc="center"
+                  ,loc="lower right")
+        plt.show()
+                  #留给后来者开发
