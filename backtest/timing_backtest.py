@@ -39,11 +39,12 @@ class timing_backtest():
         df["signal"]=df[strategy.factor_name].apply(strategy.signal)
         #开始交易  每日的交易信息添加到account表上 这里其实可以设置回测日期 不过并不影响 这里默认是交易input表上所有日期
         for i in range(len(df.index)):
+            #常规的每日信息等于现金加上持仓乘以今天的价格记录 如果需要交易则在两个逻辑分支里面修改这几个变量
             today_info=df.loc[i]
             pre_account=account.loc[i]
             cash=pre_account["cash"]
             weight=pre_account["weight"]
-            value=pre_account["value"]
+            value=cash+weight*today_info["close"]
             #信号为1 现金足够的情况下买入
             if pre_account["weight"]==0 and today_info["signal"]==1:
                 cash=pre_account["cash"]%today_info["close"]
