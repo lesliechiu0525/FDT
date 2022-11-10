@@ -14,7 +14,7 @@ class strategy():
         if method=="M":#指标动量
             self.signal=lambda x:1 if x>long else(-1 if x<short else 0)
         if method=="I":#指标反转
-            self.signal=lambda x:-1 if x>long else(1 if x<short else 0)
+            self.signal=lambda x:1 if x<long else(-1 if x>short else 0)
         #可以建模做连续预测 来和仓位挂钩 后面开发
 class timing_backtest():
     def __init__(self):
