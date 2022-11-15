@@ -13,7 +13,15 @@ class strategy():
 
     def fit_data(self,data):
         self.data=data
-    def multi_factor_simple(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
+    def mulity_factor_simple(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
+        self.factor_name=[i for i in param.keys()]
+        self.threshold=[i for i in param.values()]
+        if method=="M":#指标动量
+            self.signal=lambda x,long,short:1 if x>long else(-1 if x<short else 0)
+        if method=="I":#指标反转
+            self.signal=lambda x,long,short:1 if x<long else(-1 if x>short else 0)
+        #可以建模做连续预测 来和仓位挂钩 后面开发
+    def multi_factor_rolling(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
         self.factor_name = [i for i in param.keys()]
         self.threshold = [i for i in param.values()]
         temp,counter=[],0
