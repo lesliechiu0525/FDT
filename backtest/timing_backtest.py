@@ -10,29 +10,43 @@ class strategy():
         self.position=None
         self.factor_name=None
         self.threshold=None
-    def mulity_factor_simple(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
-        self.factor_name=[i for i in param.keys()]
-        self.threshold=[i for i in param.values()]
+
+    def fit_data(self,data):
+        self.data=data
+    def multi_factor_simple(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
+        self.factor_name = [i for i in param.keys()]
+        self.threshold = [i for i in param.values()]
+        temp,counter=[],0
+        for i in self.threshold:
+            if len(i)!=2:
+                temp.append(self.factor_name[counter]+"rolling")
+                self.data[self.factor_name[counter]+"rolling"] = list((self.data[self.factor_name[counter]]).rolling(i[2]).mean())
+            else:
+                temp.append(self.factor_name[counter])
+            counter+=1
+        self.factor_name=temp
+        self.threshold = [i for i in param.values()]
         if method=="M":#指标动量
             self.signal=lambda x,long,short:1 if x>long else(-1 if x<short else 0)
         if method=="I":#指标反转
             self.signal=lambda x,long,short:1 if x<long else(-1 if x>short else 0)
         #可以建模做连续预测 来和仓位挂钩 后面开发
+
 class timing_backtest():
-    def __init__(self):
+    def __init__(self,data):
         self.account=pd.DataFrame(columns=["trade_date","cash","weight","value"])
-        self.data=None
+        self.data=data
         #暂时不能做空 后面开发
         self.short_limit=False
         self.position=None
         #仓位暂不设置 后面开发
     def set_account(self,cash,position=None):
         self.account.loc[0]=["day0",cash,0,cash]
-    def fit_data(self,data):
-        self.data=data
+
     def run(self,strategy):
         account=self.account
-        df=self.data
+        df=strategy.data
+
         factors=strategy.factor_name
         threshold=strategy.threshold
         #价格etf标准化
@@ -74,7 +88,7 @@ class timing_backtest():
         print("---------"*5,"result","---------"*5)
         print("start_value:",account.loc[0,"value"])
         print("end_value:",account.loc[max(account.index),"value"])
-        print("totle_return",account.loc[max(account.index),"value"]/account.loc[0,"value"])
+        print("total_return",account.loc[max(account.index),"value"]/account.loc[0,"value"])
         self.account=account
     def analysis(self):
         #这里根据run方法得到的交易记录表进行详细分析 输出年化收益 夏普比率 最大回测 超额收益 交易单 画净值图
@@ -97,15 +111,14 @@ class timing_backtest():
         print("夏普比率为{}".format((df_annual.values.mean()-1)/df_annual.values.std()))
         #暂时之开发画净值图
         df_result=self.account
-        data=self.data
         fig=plt.figure(figsize=(18,12))
         plt.plot(pd.to_datetime(df_result["trade_date"][1:]),df_result["value"][1:]/df_result.loc[0,"value"],label="strategy_value")
-        plt.plot(pd.to_datetime(data["trade_date"]),data["close"]/data.loc[0,"close"],label="000300SH_value")
+        plt.plot(pd.to_datetime(self.data["trade_date"]),self.data["close"]/self.data.loc[0,"close"],label="000300SH_value")
         plt.title("strategy_performance")
         plt.legend(fancybox=True,shadow=True)
         columns=["000300SH","strategy","excess"]
         rows=["final_return"]
-        market_return=data.loc[max(data.index),"close"]/data.loc[0,"close"]
+        market_return=self.data.loc[max(self.data.index),"close"]/self.data.loc[0,"close"]
         strategy_return=df_result.loc[max(df_result.index),"value"]/df_result.loc[0,"value"]
         excessive_return=strategy_return-market_return
         values=[[market_return,strategy_return,excessive_return]]
