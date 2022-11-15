@@ -9,12 +9,14 @@ class strategy():
         self.limit=None
         self.position=None
         self.factor_name=None
-    def single_factor(self,factor_name,long,short,close=None,method="M"):#long 和 short的数值必须添加 close后面开发
-        self.factor_name=factor_name
+        self.threshold=None
+    def mulity_factor_simple(self,param,close=None,method="I"):#代码更改 统一改为多指标形式 输入param字典
+        self.factor_name=[i for i in param.keys()]
+        self.threshold=[i for i in param.values()]
         if method=="M":#指标动量
-            self.signal=lambda x:1 if x>long else(-1 if x<short else 0)
+            self.signal=lambda x,long,short:1 if x>long else(-1 if x<short else 0)
         if method=="I":#指标反转
-            self.signal=lambda x:1 if x<long else(-1 if x>short else 0)
+            self.signal=lambda x,long,short:1 if x<long else(-1 if x>short else 0)
         #可以建模做连续预测 来和仓位挂钩 后面开发
 class timing_backtest():
     def __init__(self):
@@ -30,13 +32,20 @@ class timing_backtest():
         self.data=data
     def run(self,strategy):
         account=self.account
-        df=self.data[["trade_date","ts_code","close",strategy.factor_name]]
+        df=self.data
+        factors=strategy.factor_name
+        threshold=strategy.threshold
         #价格etf标准化
         df=df.copy()
         df["close"]=df["close"]/df.loc[0,"close"]
         #加载信号
         df=df.copy()
-        df["signal"]=df[strategy.factor_name].apply(strategy.signal)
+        df["signal"]=0
+        for i in range(len(factors)):
+            long=threshold[i][0]
+            short=threshold[i][1]
+            df["signal"]+=df[factors[i]].apply(strategy.signal,args=(long,short))
+        df["signal"]=df["signal"]/len(factors)
         #开始交易  每日的交易信息添加到account表上 这里其实可以设置回测日期 不过并不影响 这里默认是交易input表上所有日期
         for i in range(len(df.index)):
             #常规的每日信息等于现金加上持仓乘以今天的价格记录 如果需要交易则在两个逻辑分支里面修改这几个变量
@@ -82,7 +91,8 @@ class timing_backtest():
         df_annual.fillna(df_annual0.iloc[0],inplace=True)
         print("-------年化收益-------")
         for i in range(len(df_annual.index)):
-            print(df_annual.index[i].strftime("%Y"),df_annual[i])
+            print(df_annual.index[i].strftime("%Y"), "{:.2%}".format(df_annual[i]-1))
+        print("平均年化收益率{:.2%}".format(np.power(result_data.loc[max(result_data.index),"return"],1/12)-1))
         print("-----夏普比率-----")
         print("夏普比率为{}".format((df_annual.values.mean()-1)/df_annual.values.std()))
         #暂时之开发画净值图
